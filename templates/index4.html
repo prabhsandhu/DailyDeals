@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.bar {
+  fill: steelblue;
+}
+.bar:hover {
+  fill: orangered ;
+}
+
+
+.x.axis path {
+  display: none;
+}
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+.tooltip{
+  
+  font-weight: bold;
+  padding-right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  font-family: sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  fill:black; 
+  border-radius: -29px;
+}
+
+
+
+</style>
+<body >
+<form action="">
+<br><br>
+<input type="radio" name="site" value="gp" id="gp" onclick="test()" ><font size="5">Groupon</font>
+<input type="radio" name="site" value="ls" id="ls" onclick="test()"><font size="5">LivingSocial
+<input type="radio" name="site" value="al" id="al" onclick="test()"><font size="5">AmazonLocal
+<input type="radio" name="site" value="kd" id="kd" onclick="test()"><font size="5">KGBDeals<br><br><br><br>
+</form>
+
+<script src="//d3js.org/d3.v3.min.js">
+</script>
+<div id="graph">
+<script>
+
+
+function test1(){
+    var table="/static/groupon.csv";
+    var rate_value;
+    if (document.getElementById('gp').checked) {
+  rate_value = document.getElementById('gp').value;
+} else if(document.getElementById('ls').checked) {
+  rate_value = document.getElementById('ls').value;
+}
+else if(document.getElementById('kd').checked) {
+  rate_value = document.getElementById('kd').value;
+}
+else if(document.getElementById('al').checked) {
+  rate_value = document.getElementById('al').value;
+}
+    switch(rate_value)
+    {
+      case "gp": table="/static/groupon.csv";
+                  return table;
+      case "ls": table="/static/livsocial.csv";
+                   return table;
+
+      case "kd": table="/static/kgbdeals.csv";
+                   return table;
+      case "al": table="/static/ama.csv";
+                   return table;
+      default: return table;
+      
+
+    }
+  }
+  function test(){
+d3.select("svg").remove();
+var margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var x0 = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+var x1 = d3.scale.ordinal();
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.ordinal()
+    .range(["#98abc5", "#8a89a6", "#7b6888"]);
+
+var xAxis = d3.svg.axis()
+    .scale(x0)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(d3.format(".2s"));
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+
+  
+ 
+ 
+ var table1=test1();   
+
+d3.csv(table1, function(error, data) {
+  if (error) throw error;
+
+  var ageNames = d3.keys(data[0]).filter(function(key) { return key !== "time_period"; });
+
+  data.forEach(function(d) {
+    d.ages = ageNames.map(function(name) { return {group: d.value,name: name, value: +d[name]}; });
+  });
+
+  x0.domain(data.map(function(d) { return d.time_period; }));
+  x1.domain(ageNames).rangeRoundBands([0, x0.rangeBand()]);
+  y.domain([0, d3.max(data, function(d) { return d3.max(d.ages, function(d) { return d.value; }); })]);
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Revenue");
+
+  var state = svg.selectAll(".state")
+      .data(data)
+    .enter().append("g")
+      .attr("class", "state")
+      .attr("transform", function(d) { return "translate(" + x0(d.time_period) + ",0)"; });
+
+
+  state.selectAll("rect")
+      .data(function(d) { return d.ages; })
+    .enter().append("rect")
+      .attr("width", x1.rangeBand())
+      .attr("x", function(d) { return x1(d.name); })
+      .attr("y", function(d) { return y(d.value); })
+      .attr("height", function(d) { return height - y(d.value); })
+      .style("fill", function(d) { return color(d.name); });
+
+    
+  state.selectAll("rect")
+
+    .on("mouseover", function(d){
+      {
+        var xPos = parseFloat(d3.select(this).attr("x"));
+                var yPos = d3.select(this).attr("y");
+        var height = d3.select(this).attr("height");
+            xpos=d3.select(this).attr("x");
+        var dis=calc_discount(d.value);
+        d3.select(this).attr("stroke","black").attr("stroke-width",4.0);             
+        var z=x0.rangeBand()/4;
+        svg.append("text")
+          .attr("x",z)
+          .attr("y",y+30000000+z)
+          .attr("class","tooltip")
+          .text( "Revenue:"+d.value+"\n "+"\t ,  Discount:" +dis );    
+              
+      }
+    })
+    .on("mouseout",function(){
+      svg.select(".tooltip").remove();
+      d3.select(this).attr("stroke","#ff9999").attr("stroke-width",0.2);
+                            
+    })     
+        
+
+
+  var legend = svg.selectAll(".legend")
+      .data(ageNames.slice().reverse())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d; });
+var discount;
+function calc_discount(ch)
+{
+if (ch==2636382){
+  discount=56.49;return discount;
+
+}else if (ch==23618548){
+  discount=63.78;return discount;
+
+}else if (ch==32646899){
+  discount=62.04;return discount;
+
+}else if (ch==4902525){
+  discount=56.74;return discount;
+
+}else if (ch==23918195){
+  discount=61.76;return discount;
+
+}else if (ch==36294940){
+  discount=63.71;return discount;
+
+}else if (ch==7102300){
+  discount=64.28;return discount;
+
+}else if (ch==33848235){
+  discount=60.21;return discount;
+
+}else if (ch==6256633){
+  discount=63.65;return discount;
+
+}else if (ch==13083429){
+  discount=58.71;return discount;
+
+}else if (ch==34214612){
+  discount=60.62;return discount;
+
+}else if (ch==0){
+  discount=0;return discount;
+
+}else if (ch==4142210){
+  discount=57.84;return discount;
+
+}else if (ch==10955531){
+  discount=58.82;return discount;
+
+}else if (ch==6787640){
+  discount=57.57;return discount;
+
+}else if (ch==10307488){
+  discount=58.22;return discount;
+
+}else if (ch==8482687){
+  discount=59.47;return discount;
+
+}else if (ch==2513798){
+  discount=57.11;return discount;
+
+}else if (ch==2442207){
+  discount=59.73;return discount;
+
+}else if (ch==12987784){
+  discount=58.18;return discount;
+
+}else if (ch==52353.45){
+  discount=56.62;return discount;
+
+}else if (ch==140852){
+  discount=63.3;return discount;
+
+}else if (ch==150774.81){
+  discount=62.87;return discount;
+
+}else if (ch==136240.68){
+  discount=63.71;return discount;
+
+}else if (ch==1039){
+  discount=70.93;return discount;
+
+}else if (ch==168010.05){
+  discount=64.66;return discount;
+
+}else if (ch==28251.01){
+  discount=67.49;return discount;
+
+}else if (ch==26451.35){
+  discount=59.99;return discount;
+
+}else if (ch==121925){
+  discount=66.27;return discount;
+
+}else if (ch==725624){
+  discount=61.06;return discount;
+
+}else if (ch==1563933){
+  discount=61.47;return discount;
+
+}else if (ch==208061){
+  discount=58;return discount;
+
+}else if (ch==366583){
+  discount=57.09;return discount;
+
+}else if (ch==921650){
+  discount=58.9;return discount;
+
+}
+
+
+}
+
+});
+
+}
+
+</script> </div></body>

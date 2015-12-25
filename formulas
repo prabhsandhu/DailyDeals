@@ -1,0 +1,43 @@
+db.projects.aggregate(
+[
+{
+$match: 
+{
+site: { $in: [ "Groupon","LivingSocial","AmazonLocal","KGBDeals"] },
+start_date:
+{
+$gte:new Date( '01/01/2010' )
+$lt:new Date( '30/04/2010' )
+}
+}},
+{
+ $group:{
+ _id:"$site",
+totalrevenue:{$sum:"$revenue"},
+avgdiscount:{$avg:"$discount"}
+    
+}
+}
+]
+);
+
+
+
+db.proects.find().forEach(function(element){
+  element.start_date = ISODate(element.OrderDate);
+  db.collection.save(element);
+})
+
+
+var cursor = db.projects.find(); 
+while (cursor.hasNext()) { 
+  var doc = cursor.next(); 
+  db.projects.update({_id : doc._id}, {$set : {end_date : new ISODate(doc.end_date) }});
+}
+
+db.projects.find(
+{start_date:
+{
+$gt:new Date( '01/01/2010' )
+$lt:new Date( '30/04/2010' )
+}})
